@@ -1,0 +1,147 @@
+extends layout
+block content
+    #info #{msg}
+    #map
+    script.
+        // Create variable to hold map element, give initial settings to map
+        //var map = L.map('map',{ center: [39.933365, 32.859741], zoom: 19});
+      
+        var map = L.map('map');
+        // Add OpenStreetMap tile layer to map element
+        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+    
+        var tiles = !{JSON.stringify(jsonData)};
+        var t = L.geoJSON(tiles, {
+            onEachFeature: onEachFeature
+        });
+        function onEachFeature(feature, layer) {
+            if (feature.properties && feature.properties.id) {
+                //layer.bindPopup(feature.properties.bbox.toString());
+                var tl= L.imageOverlay('http://159.65.124.240:8090/assets/tiles/' + feature.properties.id + '.jpg', 
+                feature.properties.bbox, { 
+                    interactive: false, }).addTo(map);
+                 //-tl.on('mouseover', onMouseOver);
+                //- tl.on('mouseout', onMouseOut);
+                //- tl.on('click', onTileClick);
+            }
+        }
+        //- map.on('mouseover', onMouseOver);
+        map.on('mousemove', onMouseMove);
+        map.on('mouseout', onMouseOut);
+        map.on('click', onTileClick);
+        map.fitBounds(t.getBounds()); //json içideki tüm tile'ların bound'u
+        map.setZoom(12);
+        //- map.controls.zoomControl.setPosition('bottomright');
+
+        //var selectedRectBounds = L.rectangle();
+        function isCursorInsideBBOX(la,lo, polyPoints) {
+            //document.getElementById("info").innerHTML = "TEST XX : " + polyPoints[1][0]  ; //la,lo - la,lo
+                var inside = false;
+
+                if (la>polyPoints[0][0] && lo>polyPoints[0][1] && la<polyPoints[1][0] && lo<polyPoints[1][1]){
+                    inside = true;
+                }else{
+                    inside = false;
+                }          
+            return inside;
+        };
+
+        function onMouseMove(e){
+            //document.getElementById("info").innerHTML = e.latlng.toString(); 
+            //TODO search fonksiyonu burada çağrılacak
+            var la = e.latlng.lat;
+            var lo = e.latlng.lng;
+
+            var s = L.geoJSON(tiles, {
+                onEachFeature: function(feature,layer){
+                    if (feature.properties && feature.properties.id) {
+                      var inside =  isCursorInsideBBOX(la, lo,feature.properties.bbox);
+                      if(inside){
+                          document.getElementById("info").innerHTML = "Inside";
+                          L.rectangle(feature.properties.bbox, { color: 'lime', weight: 2, transparency:true, fill:false}).addTo(map);
+                      }else{
+                          //document.getElementById("info").innerHTML = "Clear the rectangles";
+                          
+                        //-   s.filter(function(layer){
+                        //-       return layer instanceof L.Polygon;
+                        //-   }).forEach(function(layer){
+                        //-       map.removeLayer(layer);
+                        //-   });
+                      }
+                    }
+                }
+            });   
+
+        }
+                function onTileClick(e) {
+
+
+            //- popup.setLatLng(e.latlng)
+            //- .setContent("clicked the map at " + e.latlng.toString())
+            //- .openOn(map);
+
+            //- var selectedRectBounds = L.latLngBounds(e.sourceTarget.getBounds());
+            //- selected =  L.rectangle(selectedRectBounds, { color: 'lime', weight: 3, transparency:true, fill:false})
+            //- .addTo(map); 
+
+             //document.getElementById("info").innerHTML = e.latlng;
+             
+
+        //-     var popLocation= e.latlng;
+        //- var popup = L.popup()
+        //- .setLatLng(e.latlng)
+        //- .setContent(e.latlng.toString())
+        //- .openOn(map);  
+
+
+        }
+        //function onMouseOver(e) {
+
+          //  document.getElementById("info").innerHTML = e.latlng.toString();   
+
+            //- L.polygon(coords).bindTooltip("my tooltip", {
+            //-     sticky: true // If true, the tooltip will follow the mouse instead of being fixed at the feature center.
+            //- }).addTo(map);
+            //e.sourceTarget.layer.bindToolTip("TIK",{sticky:true, opacity:0.5});
+
+            //- this.getElement().style.outline = '3px solid red';
+            //- this.getElement().style.zIndex = "1";
+            
+            
+            //json'da ara, yakın koordinatı-tile'ı bul
+
+            
+
+            //DRAW RECTANGLE DENE
+            //- var rectBounds = L.latLngBounds(e.sourceTarget.getBounds());
+            //- window.rectangle =  L.rectangle(rectBounds, { color: 'lime', weight: 1, transparency:true, fill:false})
+            //- .addTo(map);  
+
+
+
+            //TODO TILE'LARIN ONMOUSE YERİNE MAP'TE e'ye göre rectangle çizdirmeyi DENE!!!        
+        //}
+        function onMouseOut(e) {
+            //document.getElementById("info").innerHTML = "C L E A R ! ";
+            
+                          
+                      
+            //- console.log(e.sourceTarget.latLngBounds);
+            //- //this.getElement().style.border = 'none';
+            //- this.getElement().style.outline = 'none';
+            //- this.getElement().style.zIndex = "-1";
+            
+            //Timeout verirsen çözülür
+            //setTimeout(function(){ alert("Hello"); }, 3000);
+            //- window.map.removeLayer(window.rectangle);
+            //window.map.removeLayer(selected);
+        }
+
+        
+
+
+
+    
+       

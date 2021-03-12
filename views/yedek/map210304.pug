@@ -1,0 +1,118 @@
+extends layout
+block content
+    #info ""
+    #map
+    script.
+        // Create variable to hold map element, give initial settings to map
+        //var map = L.map('map',{ center: [39.933365, 32.859741], zoom: 19});
+      
+        var map = L.map('map');
+        // Add OpenStreetMap tile layer to map element
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© ESRI'
+        }).addTo(map);
+    
+        var tileData = !{JSON.stringify(jsonData)};
+        var tiles = L.geoJSON(tileData, {
+            //onEachFeature: onEachFeature
+        });
+       
+
+        //- map.on('mouseover', onMouseOver);
+        map.on('mousemove', onMouseMove);
+        //map.on('mouseout', onMouseOut);
+        //map.on('click', onTileClick);
+        map.fitBounds(tiles.getBounds()); //json içideki tüm tile'ların bound'u
+        map.setZoom(12);
+
+        function isCursorInsideBBOX(la,lo, poly) {
+            //document.getElementById("info").innerHTML = "TEST XX : " + polyPoints[1][0]  ; //la,lo - la,lo
+                var inside = false;
+                var polyPoints = poly.bbox;
+                var w = polyPoints[1][1] - polyPoints[0][1]
+                
+                if (la>polyPoints[0][0] && lo>polyPoints[0][1] && la<polyPoints[1][0] && lo<polyPoints[1][1]){
+
+                    if (Math.abs(polyPoints[1][1]-lo) > (w/6)){ 
+                        //TODO tile seçimi daha hassas yapılmaya çalışılıyor. 
+                        inside = true;
+                    }
+                }else{
+                    inside = false;
+                }          
+            return {inside:inside,id:poly.id};
+        };
+
+        function onMouseMove(e){
+            var la = e.latlng.lat;
+            var lo = e.latlng.lng;
+
+            var s = L.geoJSON(tileData, {
+                onEachFeature: function(feature,layer){
+                    var rGroup = L.layerGroup();
+                    if (feature.properties && feature.properties.id) {
+
+                    var values = isCursorInsideBBOX(la, lo,feature.properties); 
+                        var inside =  values.inside;
+                        var id= values.id;
+                        //document.getElementById("info").innerHTML = "ID " + id ;
+                        var r = L.rectangle(feature.properties.bbox, {id: feature.properties.id, 
+                                            color: 'orange', weight: 3, transparency:true, fill:false});
+                      
+                      if(inside){
+                          document.getElementById("info").innerHTML = "Inside " + feature.properties.id ;
+                          rGroup.addTo(map);
+                          rGroup.addLayer(r);
+
+                            var tilesToDisplay = L.geoJson(tileData, {filter: tileFilter}).addTo(map);
+                            function tileFilter(feature) {
+                                if (feature.properties.id === "X_1280_2048") return true
+                             }
+                            //TODO ya burada inside kontrolü yapılacak, ya da başka bir kriter
+
+                            //https://stackoverflow.com/questions/16148598/leaflet-update-geojson-filter
+                        
+                      }
+                      //else{
+                        //- rGroup.foreEach(function(r){
+                        //-     document.getElementById("info").innerHTML =  " ID:  " + id;
+                        //-     if (id != r.id){
+                        //-         r.remove();
+                        //-     }
+                        //- });
+                          //document.getElementById("info").innerHTML = "Clear the rectangles";
+
+                          
+                        //-   s.filter(function(layer){
+                        //-       return layer instanceof L.Polygon;
+                        //-   }).forEach(function(layer){
+                        //-       map.removeLayer(layer);
+                        //-   });
+                      //}
+                    }
+                }
+            });   
+
+        }
+         function onTileClick(e) {
+
+             var selectedRectBounds = L.latLngBounds(e.sourceTarget.getBounds());
+            selected =  L.rectangle(selectedRectBounds, { color: 'red', weight: 3, transparency:true, fill:false})
+            .addTo(map); 
+
+             // e.latlng;
+
+        }
+            //DRAW RECTANGLE DENE
+            //- var rectBounds = L.latLngBounds(e.sourceTarget.getBounds());
+            //- window.rectangle =  L.rectangle(rectBounds, { color: 'lime', weight: 1, transparency:true, fill:false})
+            //- .addTo(map);  
+
+
+
+        
+
+
+
+    
+       

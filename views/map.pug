@@ -1,0 +1,196 @@
+extends layout
+block content
+    - var imgPreview = "img prev"
+    #info(class='info-top')
+    #menuOnOff(class="menu-open-close")
+        img(id="imgMenuOnOff" src=imgMenuOnOff class="primary-icons" onclick="showHideMenu()")
+    nav(id="menuList" class='cbp-spmenu cbp-spmenu-vertical cbp-spmenu-right cbp-spmenu-open')
+        #menu-list-sub-main(class='menu-list-sub')
+            div(toolbar-div)
+                table(class='toolbar-table')
+                    tbody  
+                        tr 
+                            td
+                                a(onclick="resetView()")
+                                    img(src="/images/house-door.svg" class="primary-icons")
+                            td 
+                                a(onclick="#")
+                                    img(src="/images/info-circle.svg" class="primary-icons")
+        
+        #mapPreview(class='mapPreview')
+        #menu-list-sub-images(class='menu-list-sub')
+    #map
+    script.
+        function showHideMenu() {
+            imgMenuOnOff = '/images/house-fill.svg'
+            var x = document.getElementById("menuList");
+            if (x.style.display === "none") {
+                x.style.display = "block";
+                document.getElementById("imgMenuOnOff").src = '/images/arrow-right-short.svg';
+            } else {
+                x.style.display = "none";
+                document.getElementById("imgMenuOnOff").src = '/images/house-fill.svg';
+                document.getElementById("imgMenuOnOff").style.setProperty('background-color', '#cecfcf');
+
+            }
+
+        }
+        function resetView(){
+            
+            mapPreview.setView([39.225444,35.358011], 5);
+            map.setView([39.225444,35.358011], 7);
+        }
+        //- var previewROILeafletId;
+        var previewROI;
+        //var map = L.map('map',{ center: [39.933365, 32.859741], zoom: 19});
+        var mapPreview = L.map('mapPreview',{ center: [39.225444,35.358011], zoom: 5});
+                L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}{r}.{ext}', {
+                    attribution: '',
+                    subdomains: 'abcd',
+                    minZoom: 5,
+                    maxZoom: 5,
+                    ext: 'png'
+                }).addTo(mapPreview);
+
+
+        var map = L.map('map');
+    
+        document.getElementById("info").style.setProperty('visibility','hidden');
+
+        var h = 1;
+        document.getElementsByClassName("leaflet-control-zoom-out")[h].style.setProperty('background-color', 'black');
+        document.getElementsByClassName("leaflet-control-zoom-in")[h].style.setProperty('background-color', 'black');
+        document.getElementsByClassName("leaflet-control-zoom-out")[h].style.setProperty('color', 'white');
+        document.getElementsByClassName("leaflet-control-zoom-in")[h].style.setProperty('color', 'white');
+        document.getElementsByClassName("leaflet-control-zoom")[0].style.setProperty('display', 'none');
+    
+        // Add OpenStreetMap tile layer to map element
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© ESRI'
+        }).addTo(map);
+    
+
+
+        var tilesGroup = L.layerGroup();
+        var tilesGroupPreview = L.layerGroup();
+        var tileData = !{JSON.stringify(jsonData)};
+        var tiles = L.geoJSON(tileData, {
+            onEachFeature: function(feature,layer){
+                tilesGroup.addLayer(
+                L.rectangle(feature.properties.bbox, 
+                {name: feature.properties.name, color: 'white', weight: 5, transparency:true, fill:true, fillOpacity:0.1, opacity:1.0}));
+            }
+        });
+
+        map.on('mousemove', onMouseMove);
+        //map.on('click', onClick);
+        map.fitBounds(tiles.getBounds()); //json içideki tüm tile'ların bound'u
+        map.setZoom(12);
+
+        function showOnMapPreview(selected){
+            //document.getElementById("info").innerHTML =  "to be selected: " + selected + " count:" + tilesGroupPreview.getLayers().length;
+                var tilesPreview = L.geoJSON(tileData, {
+                filter: tileFilter}).addTo(mapPreview).setStyle({color:'Crimson', weight:'6'});
+                function tileFilter(feature,layer) {
+                    //document.getElementById("info").innerHTML =  "to be addf: " + feature.properties.name;
+                    if (feature.properties.name === selected){ 
+                        document.getElementById("info").innerHTML =  "<strong>Searching...</strong> " + selected;
+                        return true;
+                    }else{
+                        return false;
+                        
+                    } 
+                } 
+
+                        //POST İLE - tid: tile id (Tile name) 
+                        var xhr = new XMLHttpRequest();
+                        xhr.open("POST", "/map", true);
+                        xhr.setRequestHeader('Content-Type', 'application/json');
+                        xhr.send(JSON.stringify({
+                            tid: selected 
+                        }));
+
+
+                        if(previewROI != undefined){
+                            mapPreview.removeLayer(previewROI)
+                        }
+                        
+                         previewROI = L.rectangle([map.getBounds().getSouthWest(),map.getBounds().getNorthEast()], {name: "previewROI", color: 'blue', weight: 2, transparency:true, fill:true, fillOpacity:0.01, opacity:1.0})
+                            .addTo(mapPreview);
+                    
+
+                // RESİMLERİ GÖSTER
+                var x = document.getElementById("menuList");
+                if (x.style.display === "none") {
+                    x.style.display = "block";
+                    document.getElementById("imgMenuOnOff").src = '/images/arrow-right-short.svg';
+                }
+                
+                
+                document.getElementById("menu-list-sub-images").innerHTML = "<img style='z-index:7000' src='http://159.65.124.240:8090/assets/tiles/T" + selected.substring(1, selected.length) + ".jpg' onclick=searchByImage('T_512_768') class='imgPreview'>" +
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/X" + selected.substring(1, selected.length) + ".jpg' onclick=searchByImage('T_512_768') class='imgPreview'>" + 
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/B" + selected.substring(1, selected.length) + ".jpg' class='imgPreview'>" + 
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/R" + selected.substring(1, selected.length) + ".jpg' class='imgPreview'>" + 
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/R_256_512.jpg' class='imgPreview'>" +
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/R_1024_1024.jpg' class='imgPreview'>" +  
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/T_1024_1024.jpg' class='imgPreview'>" +  
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/X_1024_1024.jpg' class='imgPreview'>" +  
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/X_1024_1024.jpg' class='imgPreview'>" +  
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/B_1024_1024.jpg' class='imgPreview'>" +
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/X_1792_768.jpg' class='imgPreview'>" + 
+                                                                            "<img src='http://159.65.124.240:8090/assets/tiles/T_1792_768.jpg' class='imgPreview'>" 
+                                                                              
+            
+        }
+        function searchByImage(imageName){
+            
+            var tilesPreview = L.geoJSON(tileData, {
+                filter: tileFilter}).addTo(mapPreview).setStyle({color:'Lawngreen', weight:'6'});
+                function tileFilter(feature,layer) {
+                    //document.getElementById("info").innerHTML =  "to be addf: " + feature.properties.name;
+                    if (feature.properties.name === imageName){ 
+                        document.getElementById("info").innerHTML =  "<strong>Searching...</strong> " + imageName;
+                        return true;
+                    }else{
+                        return false;
+                        
+                    } 
+                } 
+        }
+
+        function onMouseMove(e){
+            var la = e.latlng.lat;
+            var ln = e.latlng.lng;
+            tilesGroup.eachLayer(function(layer){
+                
+
+                //- document.getElementById("menu-list-sub-images").innerHTML = " DİSTANCE: " + layer.getBounds().getCenter().distanceTo(e.latlng)
+                //- + "<br>  W:  " + layer.getBounds().getNorthEast().distanceTo(layer.getBounds().getSouthWest()); 
+
+
+                if(layer.getBounds().getCenter().distanceTo(e.latlng) < 700){
+                        map.addLayer(layer);
+                        layer.on('click', function(){
+                            document.getElementById("info").style.setProperty('visibility','visible');     
+                            setTimeout(() => document.getElementById("info").style.setProperty('visibility','hidden'), 2000);                     
+                                //- document.getElementById("info").innerHTML =  "name: " + (layer.options.name);
+                                layer.setStyle({color:'LawnGreen', weight:4});
+                                //TODO buradan redise parametre geçilecek
+                                //TODO redisten gelen poligonlar preview haritada gösterilecek
+                                showOnMapPreview(layer.options.name);
+                                                        
+                                });
+                    } 
+                else{
+                    layer.removeEventListener('click', function(){});
+                    map.removeLayer(layer);
+                }
+            });
+        }
+
+        
+
+
+
+    
+       

@@ -1,0 +1,183 @@
+extends layout
+block content
+    #info ""
+    #map
+    script.
+        // Create variable to hold map element, give initial settings to map
+        var map = L.map('map',{ center: [39.933365, 32.859741], zoom: 12});
+      
+        //var map = L.map('map');
+        // Add OpenStreetMap tile layer to map element
+        var base = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© ESRI',
+            cins:"base"
+        }).addTo(map);
+        var tilesGroup = L.layerGroup();
+        var tileData = !{JSON.stringify(jsonData)};
+        var tiles = L.geoJSON(tileData, {
+            onEachFeature: function(feature,layer){
+                tilesGroup.addLayer(
+                L.rectangle(feature.properties.bbox, 
+                {id: feature.properties.id, color: 'orange', weight: 3, transparency:true, fill:false, opacity:0.03}))
+                .addTo(map);
+            }
+        });
+       
+        //- map.on('mouseover', onMouseOver);
+        map.on('mousemove', onMouseMove);
+        //map.on('mouseout', onMouseOut);
+        //map.on('click', onTileClick);
+        map.fitBounds(tiles.getBounds()); //json içideki tüm tile'ların bound'u
+        map.setZoom(12);
+
+        function isCursorInsideBBOX(la,lo, poly) {
+            document.getElementById("info").innerHTML = "TEST XX : " + poly ; 
+                var inside = false;
+                var polyPoints = poly.bbox;
+                var w = polyPoints[1][1] - polyPoints[0][1]
+                
+                if (la>polyPoints[0][0] && ln>polyPoints[0][1] && la<polyPoints[1][0] && ln<polyPoints[1][1]){
+
+                    if (Math.abs(polyPoints[1][1]-ln) > (w/6)){ 
+                        inside = true;
+                    }
+                }else{
+                    inside = false;
+                }          
+            return {inside:inside,id:poly.id};
+        };
+
+        function onMouseMove(e){
+            var la = e.latlng.lat;
+            var ln = e.latlng.lng;
+            var tilesToDisplay = L.geoJson(tileData, {filter: tileFilter});
+                function tileFilter(feature) {
+                    var values = isCursorInsideBBOX(la, ln,feature.properties); 
+                    var inside =  values.inside;
+                    var id= values.id;
+                    if (inside == true && feature.properties.id === id){
+                        
+                        layer.setStyle({opacity:1});
+                    }
+                }
+
+            
+            //- tilesGroup.eachLayer(function(layer){
+            //-     //e.latLng.lat
+            //-     //e.latLng.lng
+            //-     //document.getElementById("info").innerHTML = "BOUNDS " + layer.getBounds().getSouthWest().lng;
+            //-     if (la > layer.getBounds().getSouthWest().lat && 
+            //-         ln > layer.getBounds().getSouthWest().lng && 
+            //-         la < layer.getBounds().getNorthEast().lat && 
+            //-         ln <layer.getBounds().getSouthWest().lng){
+            //-         document.getElementById("info").innerHTML = "İÇERDE ";
+            //-         layer.setStyle({opacity:1});
+
+            //-     } else{
+            //-         document.getElementById("info").innerHTML = "DIŞARDA ";
+                    
+            //-     }
+            //- });
+            
+
+            //- var tilesToDisplay = L.geoJson(tileData, {
+            //-     filter: tileFilter});
+
+            //-     function tileFilter(feature,layer) {
+            //-         var values = isCursorInsideBBOX(la, lo,feature.properties); 
+            //-         var inside =  values.inside;
+            //-         var id= values.id;
+            //-         if (inside == true && feature.properties.id === id){
+                        
+            //-             layer.setStyle({opacity:1});
+            //-         }else if (inside == false){
+            //-             //- map.eachLayer(function (layer) {
+            //-             //-     if (feature.properties.id != id){
+            //-             //-         map.removeLayer(layer);
+            //-             //-     }
+            //-             //- });
+                        
+            //-         } 
+            //-     }            
+
+                
+            }
+
+                    //-             //-   s.filter(function(layer){
+            //-             //-       return layer instanceof L.Polygon;
+            //-             //-   })(function(layer){
+            //-             //-       map.removeLayer(layer);
+            //-             //-   });.forEach
+
+
+
+            //- var s = L.geoJSON(tileData, {
+            //-     onEachFeature: function(feature,layer){
+            //-         var rGroup = L.layerGroup();
+            //-         if (feature.properties && feature.properties.id) {
+
+            //-         var values = isCursorInsideBBOX(la, lo,feature.properties); 
+            //-             var inside =  values.inside;
+            //-             var id= values.id;
+            //-             //document.getElementById("info").innerHTML = "ID " + id ;
+            //-             var r = L.rectangle(feature.properties.bbox, {id: feature.properties.id, 
+            //-                                 color: 'orange', weight: 3, transparency:true, fill:false});
+                      
+            //-           if(inside){
+            //-               document.getElementById("info").innerHTML = "Inside " + feature.properties.id ;
+            //-               rGroup.addTo(map);
+            //-               rGroup.addLayer(r);
+
+            //-                 var tilesToDisplay = L.geoJson(tileData, {filter: tileFilter}).addTo(map);
+
+            //-                 function tileFilter(feature) {
+            //-                     if (feature.properties.id === "X_1280_2048") return true
+            //-                  }
+            //-                 //TODO ya burada inside kontrolü yapılacak, ya da başka bir kriter
+
+            //-                 //https://stackoverflow.com/questions/16148598/leaflet-update-geojson-filter
+                        
+            //-           }
+            //-           //else{
+            //-             //- rGroup.foreEach(function(r){
+            //-             //-     document.getElementById("info").innerHTML =  " ID:  " + id;
+            //-             //-     if (id != r.id){
+            //-             //-         r.remove();
+            //-             //-     }
+            //-             //- });
+            //-               //document.getElementById("info").innerHTML = "Clear the rectangles";
+
+                          
+            //-             //-   s.filter(function(layer){
+            //-             //-       return layer instanceof L.Polygon;
+            //-             //-   }).forEach(function(layer){
+            //-             //-       map.removeLayer(layer);
+            //-             //-   });
+            //-           //}
+            //-         }
+            //-     }
+            //- });   
+
+        
+         function onTileClick(e) {
+
+             var selectedRectBounds = L.latLngBounds(e.sourceTarget.getBounds());
+            selected =  L.rectangle(selectedRectBounds, { color: 'red', weight: 3, transparency:true, fill:false})
+            .addTo(map); 
+
+             // e.latlng;
+
+        }
+            //DRAW RECTANGLE DENE
+            //- var rectBounds = L.latLngBounds(e.sourceTarget.getBounds());
+            //- window.rectangle =  L.rectangle(rectBounds, { color: 'lime', weight: 1, transparency:true, fill:false})
+            //- .addTo(map);  
+
+
+
+        
+
+
+
+    
+       
